@@ -33,37 +33,7 @@ The dataset should be in CSV format and must contain the following columns:
 
 Columns like `EmployeeCount`, `StandardHours`, `JobRole`, `Over18`, and `EmployeeNumber` are automatically removed during preprocessing.
 
-## How to Use
 
-1. **Clone the repository**:
-    ```bash
-    git clone <repository_url>
-    cd <repository_folder>
-    ```
-
-2. **Prepare the dataset**:
-    Place your dataset in the project directory and update the `filepath` variable in the example usage.
-
-3. **Run the pipeline**:
-    You can execute the pipeline in sequence as follows:
-
-    ```python
-    # Example Usage
-    if __name__ == "__main__":
-        # Load and transform data
-        filepath = 'Employee.csv'  # Replace with actual path
-        data = load_and_transform_data(filepath)
-
-        # Preprocess features
-        X, y = preprocess_features(data)
-
-        # Train model
-        trained_model = train_model(X, y)
-
-        # Example of inference (using a subset of the data as new data)
-        sample_data = X.sample(5, random_state=42)
-        predictions = predict_new_data(trained_model, sample_data)
-        print("Predictions:", predictions)
     ```
 
 ## Features
