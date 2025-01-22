@@ -25,6 +25,41 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from dagster import asset
 
+class LocalCSVIOManager(IOManager):
+    """
+    A custom IOManager to handle saving and loading CSV files locally.
+    """
+
+    def handle_output(self, context, obj: pd.DataFrame) -> None:
+        """
+        Save a Pandas DataFrame to a CSV file.
+        Args:
+            context: The context object provided by Dagster.
+            obj (pd.DataFrame): The DataFrame to save.
+        """
+        obj.to_csv(f"{context.asset_key.path[-1]}.csv")
+
+    def load_input(self, context) -> pd.DataFrame:
+        """
+        Load a Pandas DataFrame from a CSV file.
+        Args:
+            context: The context object provided by Dagster.
+        Returns:
+            pd.DataFrame: The loaded DataFrame.
+        """
+        return pd.read_csv(f"{context.asset_key.path[-1]}.csv")
+
+
+@io_manager
+def local_csv_io_manager() -> LocalCSVIOManager:
+    """
+    Instantiate the custom CSV IOManager.
+    Returns:
+        LocalCSVIOManager: An instance of the custom IOManager.
+    """
+    return LocalCSVIOManager()
+
+
 # Step 1: Data Transformation
 @asset(name="employee_data")
 def load_and_transform_data() -> pd.DataFrame:
@@ -49,23 +84,31 @@ def load_and_transform_data() -> pd.DataFrame:
 @asset(name="preprocessed_data")
 def preprocess_features(employee_data: pd.DataFrame):
     """Preprocess and engineer features."""
-    # Plot histograms for each feature
-    employee_data.hist(bins=20, figsize=(15, 10))
-    plt.tight_layout()
-    plt.show()
-
-    # Correlation pair plot
-    sns.pairplot(employee_data)
-    plt.show()
-
-    # Convert categorical columns to numerical
-    categorical_cols = employee_data.select_dtypes(include=['object']).columns
-    employee_data = pd.get_dummies(employee_data, columns=categorical_cols, drop_first=True)
     
-    # Split features and target
-    X = employee_data.drop('Attrition', axis=1)
-    y = employee_data['Attrition'].apply(lambda x: 1 if x == 'Yes' else 0)
-    return {"features": X, "target": y}
+    print("Raw DataFrame:\n", employee_data)
+    return employee_data
+    
+    # # Plot histograms for each feature
+    # employee_data.hist(bins=20, figsize=(15, 10))
+    # plt.tight_layout()
+    # plt.show()
+    # # # Correlation pair plot
+    # # sns.pairplot(employee_data)
+    # # plt.show()
+    
+    # # Debugging: Check dataset structure
+    # print("Columns in the dataset:", employee_data.columns)
+    # print("First few rows:", employee_data.head())
+
+    # # Convert categorical columns to numerical
+    # categorical_cols = employee_data.select_dtypes(include=['object']).columns
+    # employee_data = pd.get_dummies(employee_data, columns=categorical_cols, drop_first=True)
+    
+
+    # # Split features and target
+    # y = employee_data['Attrition'].apply(lambda x: 1 if x == 'Yes' else 0)
+    # X = employee_data.drop('Attrition', axis=1)
+    # return {"features": X, "target": y}
 
 # Step 3: Model Training
 @asset(name="trained_model")
