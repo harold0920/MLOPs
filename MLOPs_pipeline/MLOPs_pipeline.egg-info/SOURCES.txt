@@ -1,0 +1,12 @@
+README.md
+pyproject.toml
+setup.cfg
+setup.py
+MLOPs_pipeline/__init__.py
+MLOPs_pipeline/assets.py
+MLOPs_pipeline/definitions.py
+MLOPs_pipeline.egg-info/PKG-INFO
+MLOPs_pipeline.egg-info/SOURCES.txt
+MLOPs_pipeline.egg-info/dependency_links.txt
+MLOPs_pipeline.egg-info/requires.txt
+MLOPs_pipeline.egg-info/top_level.txt
