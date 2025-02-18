@@ -58,7 +58,7 @@ def preprocess_features(employee_data: pd.DataFrame):
     # Scale features
     scaler = StandardScaler()
     X_scaled = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
-
+    
     return X_scaled, y
 
 
@@ -70,8 +70,19 @@ def train_model():
     employee_data = load_and_transform_data()
     X, y = preprocess_features(employee_data)
 
+    # Save the StandardScaler for inference
+    scaler = StandardScaler()
+    X_scaled = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
+
+    # Save the scaler and feature order
+    joblib.dump(scaler, "scaler.pkl")
+    joblib.dump(X.columns.tolist(), "feature_order.pkl")  # Save column order
+
+    print("✅ Saved scaler as 'scaler.pkl'")
+    print("✅ Saved feature order as 'feature_order.pkl'")
+
     # Split the data
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.3, random_state=42)
 
     # Define hyperparameters
     hyperparams = {
@@ -112,7 +123,7 @@ def train_model():
         # Log model to MLflow
         mlflow.sklearn.log_model(model, "random_forest_model")
 
-        print(f"Model logged successfully with Accuracy: {accuracy}")
+        print(f"✅ Model logged successfully with Accuracy: {accuracy}")
 
     return model
 

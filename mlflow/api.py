@@ -1,72 +1,109 @@
-from fastapi import FastAPI
 import mlflow
-from mlflow.tracking import MlflowClient
-from pydantic import BaseModel
 import pandas as pd
 import numpy as np
+import requests
+import joblib
+from fastapi import FastAPI
+from mlflow.tracking import MlflowClient
+from pydantic import BaseModel
+from io import StringIO
 
 app = FastAPI()
 mlflow.set_tracking_uri("http://localhost:5000")
 client = MlflowClient()
 
-# Load model from MLflow Registry
-def load_production_model():
-    model_name = "random_forest_model"
-    try:
-        latest_version = client.get_latest_versions(model_name, stages=["Production"])[0]
-        model_uri = f"models:/{model_name}/{latest_version.version}"
-        return mlflow.sklearn.load_model(model_uri)
-    except IndexError:
-        return None
+### **Step 1: Load Dataset Structure for Feature Names**
+def load_dataset_structure():
+    """Loads Employee dataset from GitHub to get correct feature names."""
+    url = "https://raw.githubusercontent.com/harold0920/MLOPs/main/Employee.csv"
+    
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise FileNotFoundError(f"Failed to download file from {url}. Status code: {response.status_code}")
 
-model = load_production_model()
+    # Read CSV
+    data = pd.read_csv(StringIO(response.text))
 
+    # Drop unnecessary columns
+    data.drop(columns=['EmployeeCount', 'StandardHours', 'JobRole', 'Over18', 'EmployeeNumber'], inplace=True)
 
-# ✅ **1. Prediction Endpoint**
-class InputData(BaseModel):
-    X: list
+    return data
 
+# **Retrieve correct feature names**
+employee_data = load_dataset_structure()
+feature_names = employee_data.drop(columns=["Attrition"]).columns.tolist()
+
+### **Step 2: Load Model and Scaler from MLflow**
+model = None  # Lazy loading
+scaler = joblib.load("scaler.pkl")  # Load pre-trained scaler
+feature_order = joblib.load("feature_order.pkl")  # Load correct feature order
+
+def get_model():
+    """Loads the latest production model from MLflow."""
+    global model
+    if model is None:
+        print("⚡ Loading model from MLflow...")
+        model_name = "random_forest_model"
+        model_uri = f"models:/{model_name}/Production"
+        model = mlflow.sklearn.load_model(model_uri)
+        print("✅ Model loaded successfully!")
+    return model
+
+### **Step 3: Define API Input Schema (Raw Employee Data)**
+class EmployeeData(BaseModel):
+    Age: int
+    Gender: str
+    BusinessTravel: str
+    MaritalStatus: str
+    EducationField: str
+    Department: str
+    OverTime: str
+    DistanceFromHome: int
+    MonthlyIncome: int
+    NumCompaniesWorked: int
+    TotalWorkingYears: int
+    YearsAtCompany: int
+    JobSatisfaction: int
+    EnvironmentSatisfaction: int
+    WorkLifeBalance: int
+
+### **Step 4: FastAPI Prediction Endpoint**
 @app.post("/predict")
-def predict(data: InputData):
+def predict(employee: EmployeeData):
+    model = get_model()
     if model is None:
         return {"error": "🚨 No model available. Train and register a model first."}
 
-    X_input = np.array(data.X)
-    predictions = model.predict(X_input).tolist()
-    return {"predictions": predictions}
+    # Convert EmployeeData to DataFrame
+    employee_dict = employee.dict()
+    df_input = pd.DataFrame([employee_dict])
 
+    ### **Step 5: Preprocess Raw Data (Convert Categorical to Numeric)**
+    mappings = {
+        'BusinessTravel': {'Non-Travel': 0, 'Travel_Rarely': 1, 'Travel_Frequently': 2},
+        'Gender': {'Male': 1, 'Female': 0},
+        'OverTime': {'Yes': 1, 'No': 0}
+    }
 
-# # ✅ **2. Train & Register Model**
-# @app.post("/train")
-# def train_and_register_model():
-#     # Load dataset
-#     url = "https://raw.githubusercontent.com/harold0920/MLOPs/main/Employee.csv"
-#     data = pd.read_csv(url)
+    for col, mapping in mappings.items():
+        if col in df_input:
+            df_input[col] = df_input[col].replace(mapping)
 
-#     # Feature Engineering
-#     data.drop(columns=['EmployeeCount', 'StandardHours', 'JobRole', 'Over18', 'EmployeeNumber'], inplace=True)
-#     y = data.pop("Attrition").replace({"Yes": 1, "No": 0})
-#     X = pd.get_dummies(data)
+    # One-hot encode categorical variables
+    df_input = pd.get_dummies(df_input, columns=['MaritalStatus', 'EducationField', 'Department'])
 
-#     # Train model
-#     from sklearn.ensemble import RandomForestClassifier
-#     from sklearn.model_selection import train_test_split
-#     from sklearn.metrics import accuracy_score
+    # Ensure all feature columns exist
+    for col in feature_order:
+        if col not in df_input:
+            df_input[col] = 0  # Add missing columns
 
-#     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    # Reorder columns to match training data
+    df_input = df_input[feature_order]
 
-#     model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
-    
-#     with mlflow.start_run():
-#         mlflow.log_params({"n_estimators": 100, "max_depth": 5, "random_state": 42})
-#         model.fit(X_train, y_train)
-#         accuracy = accuracy_score(y_test, model.predict(X_test))
-#         mlflow.log_metric("accuracy", accuracy)
-        
-#         # Log and register model
-#         model_uri = mlflow.sklearn.log_model(model, "model")
-#         registered_model = mlflow.register_model(model_uri, "random_forest_model")
+    ### **Step 6: Scale Input using pre-trained scaler**
+    X_scaled = scaler.transform(df_input)
 
-#     return {"message": "✅ Model trained and registered successfully!", "accuracy": accuracy}
+    ### **Step 7: Predict**
+    prediction = model.predict(X_scaled).tolist()
 
-
+    return {"prediction": prediction[0], "attrition": "Yes" if prediction[0] == 1 else "No"}
