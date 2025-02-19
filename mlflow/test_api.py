@@ -2,7 +2,6 @@ import requests
 
 url = "http://localhost:8000/predict"
 
-# Example employee input (raw categorical data)
 data = {
     "Age": 29,
     "Gender": "Male",
@@ -26,12 +25,15 @@ print("Sending request to FastAPI...")
 try:
     response = requests.post(url, json=data)
     
-    # Handle HTTP errors
+    # Print full response details for debugging
+    print(f"Response Status Code: {response.status_code}")
+    print(f"Response Content: {response.text}")
+
     if response.status_code == 200:
         prediction = response.json().get("attrition", "Unknown")
         print(f"Prediction: Employee Attrition Risk → {prediction}")
     else:
-        print(f"Error {response.status_code}: {response.text}")
+        print(f"API returned an error!")
 
 except requests.exceptions.RequestException as e:
     print(f"Request failed: {e}")
