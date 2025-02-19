@@ -23,7 +23,6 @@ def load_dataset_structure():
 
     # Read CSV
     data = pd.read_csv(StringIO(response.text))
-
     # Drop unnecessary columns
     data.drop(columns=['EmployeeCount', 'StandardHours', 'JobRole', 'Over18', 'EmployeeNumber'], inplace=True)
 
@@ -34,9 +33,9 @@ employee_data = load_dataset_structure()
 feature_names = employee_data.drop(columns=["Attrition"]).columns.tolist()
 
 ### **Step 2: Load Model and Scaler from MLflow**
-model = None  # Lazy loading
-scaler = joblib.load("scaler.pkl")  # Load pre-trained scaler
-feature_order = joblib.load("feature_order.pkl")  # Load correct feature order
+model = None 
+scaler = joblib.load("scaler.pkl")  
+feature_order = joblib.load("feature_order.pkl")  
 
 def get_model():
     """Loads the latest production model from MLflow."""

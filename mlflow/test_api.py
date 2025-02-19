@@ -2,7 +2,7 @@ import requests
 
 url = "http://localhost:8000/predict"
 
-# ✅ Example employee input (raw categorical data)
+# Example employee input (raw categorical data)
 data = {
     "Age": 29,
     "Gender": "Male",
@@ -21,8 +21,8 @@ data = {
     "WorkLifeBalance": 2
 }
 
-print("🚀 Sending request to FastAPI...")
+print("Sending request to FastAPI...")
 response = requests.post(url, json=data)
 
-print("✅ Response Status Code:", response.status_code)
+print("Response Status Code:", response.status_code)
 print("Predictions:", response.json())
