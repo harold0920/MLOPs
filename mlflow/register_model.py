@@ -21,7 +21,7 @@ except Exception as e:
 
 # Move Model to "Production"
 try:
-    version = client.get_latest_versions(model_name)[0].version
+    version = max(client.get_latest_versions(model_name), key=lambda v: int(v.version)).version
     client.transition_model_version_stage(name=model_name, version=version, stage="Production")
     print(f"🚀 Model version {version} moved to Production!")
 except Exception as e:

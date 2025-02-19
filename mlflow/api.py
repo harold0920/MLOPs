@@ -44,7 +44,13 @@ def get_model():
     if model is None:
         print("⚡ Loading model from MLflow...")
         model_name = "random_forest_model"
-        model_uri = f"models:/{model_name}/Production"
+
+        # Instead of get_latest_versions(), use search_model_versions()
+        versions = client.search_model_versions(f"name='{model_name}'")
+        latest_version = max(versions, key=lambda v: int(v.version))  # Get the highest version
+
+        # Use latest version URI
+        model_uri = latest_version.source
         model = mlflow.sklearn.load_model(model_uri)
         print("✅ Model loaded successfully!")
     return model
