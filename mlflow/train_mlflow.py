@@ -115,9 +115,9 @@ def train_model():
             # Log classification report
             report = classification_report(y_test, y_pred, output_dict=True)
             report_df = pd.DataFrame(report).transpose()
-            report_df.to_csv("classification_report.csv", index=True)
-            mlflow.log_artifact("classification_report.csv", artifact_path="artifacts")
-            mlflow.log_artifact("random_forest_model.pkl", artifact_path="artifacts")
+            mlflow.log_artifact("classification_report.csv")
+            # Log model as an MLflow Model
+            mlflow.sklearn.log_model(model, artifact_path="random_forest_model")
 
             # Save and log model
             model_path = "random_forest_model.pkl"

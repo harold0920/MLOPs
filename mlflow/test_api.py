@@ -22,7 +22,16 @@ data = {
 }
 
 print("Sending request to FastAPI...")
-response = requests.post(url, json=data)
 
-print("Response Status Code:", response.status_code)
-print("Predictions:", response.json())
+try:
+    response = requests.post(url, json=data)
+    
+    # Handle HTTP errors
+    if response.status_code == 200:
+        prediction = response.json().get("attrition", "Unknown")
+        print(f"Prediction: Employee Attrition Risk → {prediction}")
+    else:
+        print(f"Error {response.status_code}: {response.text}")
+
+except requests.exceptions.RequestException as e:
+    print(f"Request failed: {e}")

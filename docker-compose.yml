@@ -63,7 +63,7 @@ services:
     environment:
       - AWS_ACCESS_KEY_ID=H1oGk8c1LwgZ8X3SSYWF
       - AWS_SECRET_ACCESS_KEY=GBuYcgheF6L5Bcyn9qrzcrnYoaJlDWGoVuzVtDqb
-      - MLFLOW_S3_ENDPOINT_URL=http://s3:9000
+      - MLFLOW_S3_ENDPOINT_URL=http://172.19.0.3:9000
       - MLFLOW_S3_IGNORE_TLS=true
       - MLFLOW_ARTIFACTS_BUCKET=mlflow
     command: >
