@@ -17,13 +17,13 @@ FROM python:3.12
 # Set the working directory inside the container
 WORKDIR /app
 
-COPY ./fastapi/ /app/
+COPY . .
 
 # Install dependencies
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# Expose the FastAPI port
-EXPOSE 8000
+# # Expose the FastAPI port
+# EXPOSE 8000
 
 # Start FastAPI
 CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

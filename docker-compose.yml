@@ -63,9 +63,9 @@ services:
     environment:
       - AWS_ACCESS_KEY_ID=H1oGk8c1LwgZ8X3SSYWF
       - AWS_SECRET_ACCESS_KEY=GBuYcgheF6L5Bcyn9qrzcrnYoaJlDWGoVuzVtDqb
-      - MLFLOW_S3_ENDPOINT_URL=http://172.19.0.3:9000
+      - MLFLOW_S3_ENDPOINT_URL=http://s3:${MINIO_PORT}
       - MLFLOW_S3_IGNORE_TLS=true
-      - MLFLOW_ARTIFACTS_BUCKET=mlflow
+      # - MLFLOW_ARTIFACTS_BUCKET=mlflow
     command: >
       mlflow server
       --backend-store-uri postgresql://${PG_USER}:${PG_PASSWORD}@db:${PG_PORT}/${PG_DATABASE}
@@ -86,6 +86,7 @@ services:
     restart: always
     depends_on:
       - tracking_server
+      - s3
     ports:
       - "8000:8000"
     networks:
@@ -94,6 +95,10 @@ services:
     environment:
       - MLFLOW_TRACKING_URI=http://tracking_server:5000
       - DATABASE_URL=postgresql://${PG_USER}:${PG_PASSWORD}@db:${PG_PORT}/${PG_DATABASE}
+      - MLFLOW_S3_ENDPOINT_URL=http://s3:${MINIO_PORT}
+      - AWS_ACCESS_KEY_ID=H1oGk8c1LwgZ8X3SSYWF
+      - AWS_SECRET_ACCESS_KEY=GBuYcgheF6L5Bcyn9qrzcrnYoaJlDWGoVuzVtDqb
+ 
     command: >
       uvicorn api:app --host 0.0.0.0 --port 8000 --workers 4
     healthcheck:
